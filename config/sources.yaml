@@ -1,0 +1,55 @@
+topics:
+  - name: ai_local_llm
+    label: AI / ローカルLLM
+    feeds:
+      - name: 企業テックブログRSS
+        url: https://yamadashy.github.io/tech-blog-rss-feed/feeds/rss.xml
+    keywords:
+      - Codex
+      - Ollama
+      - Qwen
+      - RAG
+      - MCP
+
+  - name: dev_environment
+    label: 開発環境
+    feeds:
+      - name: Qiita
+        url: https://qiita.com/popular-items/feed
+      - name: Zenn
+        url: https://zenn.dev/feed
+    keywords:
+      - Go
+      - OCR
+      - PaddleOCR
+      - OpenCV
+      - Zed
+
+  - name: normal
+    label: news
+    feeds:
+      - name: NHK 社会
+        url: https://news.web.nhk/n-data/conf/na/rss/cat1.xml
+      - name: NHK 政治
+        url: https://news.web.nhk/n-data/conf/na/rss/cat4.xml
+      - name: NHK 経済
+        url: https://news.web.nhk/n-data/conf/na/rss/cat5.xml
+    keywords:
+      - 経済
+      - 政治
+      - 社会
+
+  - name: gadget
+    label: news
+    feeds:
+      - name: nichepcgamer
+        url: https://www.nichepcgamer.com/feed
+      - name: gazlog
+        url: https://gazlog.jp/feed/
+    keywords:
+      - NVIDIA
+      - RTX
+      - Linux ARM64
+      - Ubuntu
+      - intel ARC
+      - Ryzen

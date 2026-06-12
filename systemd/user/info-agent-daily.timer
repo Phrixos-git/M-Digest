@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Info Agent daily
+
+[Timer]
+OnCalendar=*-*-* 07:00:00
+Persistent=true
+Unit=info-agent-daily.service
+
+[Install]
+WantedBy=timers.target

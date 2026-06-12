@@ -1,0 +1,9 @@
+[Unit]
+Description=Info Agent daily RSS collection
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/info-agent
+ExecStart=%h/projects/info-agent/scripts/run_daily.sh
