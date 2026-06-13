@@ -8,7 +8,7 @@
 
 ## GITHUBルール
 - `git push`は、ユーザの明示的な指示があった場合のみ行うこと
-- 作業開始前に必ずfutureブランチにいるか確認する。いなければ作成する。形式：future_YYYYMMDD
+- 作業開始前に必ずfutureブランチにいるか確認する。いなければdevブランチを元に作成する。形式：future_YYYYMMDD
 - 同日のfutureブランチがある際はそれを利用する
 - push前に `git status` と `git diff --stat` を確認する。
 - commit message は日本語で簡潔に書く。
