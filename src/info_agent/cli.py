@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from .collector import DailyCollector
+from .emailer import load_email_config_from_env, send_report_email
 
 
 def main() -> int:
@@ -26,6 +27,7 @@ def main() -> int:
         include_seen=args.include_seen,
     )
     report_path = collector.run()
+    send_report_email(report_path, args.date, load_email_config_from_env())
     print(report_path)
     return 0
 

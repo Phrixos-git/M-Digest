@@ -8,6 +8,7 @@ logs/
 .codex/
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.crt

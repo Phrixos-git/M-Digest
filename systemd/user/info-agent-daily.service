@@ -6,4 +6,5 @@ After=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=%h/projects/info-agent
+EnvironmentFile=-%h/.config/info-agent/email.env
 ExecStart=%h/projects/info-agent/scripts/run_daily.sh
