@@ -37,7 +37,7 @@ class DailyCollector:
                 seen.add(entry)
             enabled_sources = {(source.name, source.category) for source in sources}
             for entry in seen.entries():
-                if (entry.source, entry.category) in enabled_sources:
+                if _is_enabled_entry(entry, enabled_sources):
                     _append_once(entries, report_keys, entry)
 
         for source in sources:
@@ -84,21 +84,35 @@ def _append_once(entries: list[Entry], report_keys: set[str], entry: Entry) -> N
     report_keys.add(key)
 
 
+def _is_enabled_entry(entry: Entry, enabled_sources: set[tuple[str, str]]) -> bool:
+    if (entry.source, entry.category) in enabled_sources:
+        return True
+    return entry.category == "general" and any(entry.source == source for source, _ in enabled_sources)
+
+
 def _entries_from_existing_reports(output_dir: Path) -> list[Entry]:
     if not output_dir.exists():
         return []
 
     entries: list[Entry] = []
     category = "general"
+    source = ""
     for report_path in sorted(output_dir.glob("*.md")):
         pending: Entry | None = None
-        for line in report_path.read_text(encoding="utf-8").splitlines():
+        lines = report_path.read_text(encoding="utf-8").splitlines()
+        for index, line in enumerate(lines):
+            if line and set(line) == {"="} and index > 0:
+                source = lines[index - 1].strip()
+                category = "general"
+                pending = None
+                continue
             if line.startswith("## "):
                 category = line[3:].strip() or "general"
+                source = ""
                 pending = None
                 continue
             if line.startswith("- ["):
-                parsed = _entry_from_report_line(line, category)
+                parsed = _entry_from_report_line(line, category, source)
                 if parsed is not None:
                     entries.append(parsed)
                     pending = parsed
@@ -116,20 +130,27 @@ def _entries_from_existing_reports(output_dir: Path) -> list[Entry]:
     return entries
 
 
-def _entry_from_report_line(line: str, category: str) -> Entry | None:
+def _entry_from_report_line(line: str, category: str, source: str = "") -> Entry | None:
     title_end = line.find("](")
-    url_end = line.find(") - ", title_end + 2)
+    url_end = line.find(")", title_end + 2)
     if not line.startswith("- [") or title_end == -1 or url_end == -1:
         return None
 
     title = line[3:title_end].strip()
     url = line[title_end + 2 : url_end].strip()
-    source_and_date = line[url_end + 4 :].strip()
-    source = source_and_date
+    remainder = line[url_end + 1 :].strip()
     published = ""
-    if source_and_date.endswith(")") and " (" in source_and_date:
-        source, published = source_and_date.rsplit(" (", 1)
-        published = published[:-1]
+
+    if remainder.startswith("- "):
+        source_and_date = remainder[2:].strip()
+        source = source_and_date
+        if source_and_date.endswith(")") and " (" in source_and_date:
+            source, published = source_and_date.rsplit(" (", 1)
+            published = published[:-1]
+    elif remainder.startswith("(") and remainder.endswith(")"):
+        published = remainder[1:-1]
+    elif remainder:
+        published = remainder
 
     if not title or not url or not source:
         return None

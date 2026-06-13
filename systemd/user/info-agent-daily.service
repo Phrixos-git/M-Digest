@@ -7,4 +7,5 @@ After=network-online.target
 Type=oneshot
 WorkingDirectory=%h/projects/info-agent
 EnvironmentFile=-%h/.config/info-agent/email.env
+Environment=PYTHONUNBUFFERED=1
 ExecStart=%h/projects/info-agent/scripts/run_daily.sh
