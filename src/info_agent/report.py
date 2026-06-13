@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import re
 
 from .rss import Entry
+
+_HTML_IMAGE_RE = re.compile(r"<(?:img|picture|source)\b[^>]*>", re.IGNORECASE)
+_HTML_FIGURE_RE = re.compile(r"<figure\b[^>]*>.*?</figure>", re.IGNORECASE)
+_MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*]\([^)]*\)")
 
 
 def render_markdown(report_date: str, entries: list[Entry], errors: list[str]) -> str:
@@ -16,18 +21,19 @@ def render_markdown(report_date: str, entries: list[Entry], errors: list[str]) -
 
     grouped: dict[str, list[Entry]] = defaultdict(list)
     for entry in entries:
-        grouped[entry.category].append(entry)
+        grouped[entry.source].append(entry)
 
     if not entries:
         lines.extend(["No new articles found.", ""])
     else:
-        for category in sorted(grouped):
-            lines.extend([f"## {category}", ""])
-            for entry in grouped[category]:
+        for source in sorted(grouped):
+            lines.extend([source, "=" * max(len(source), 1), ""])
+            for entry in grouped[source]:
                 published = f" ({entry.published})" if entry.published else ""
-                lines.append(f"- [{entry.title}]({entry.url}) - {entry.source}{published}")
-                if entry.summary:
-                    lines.append(f"  - {entry.summary[:240]}")
+                lines.append(f"- [{_strip_images(entry.title)}]({entry.url}){published}")
+                summary = _strip_images(entry.summary)
+                if summary:
+                    lines.append(f"  - {summary[:240]}")
             lines.append("")
 
     if errors:
@@ -37,3 +43,10 @@ def render_markdown(report_date: str, entries: list[Entry], errors: list[str]) -
         lines.append("")
 
     return "\n".join(lines)
+
+
+def _strip_images(value: str) -> str:
+    text = _HTML_FIGURE_RE.sub("", value or "")
+    text = _HTML_IMAGE_RE.sub("", text)
+    text = _MARKDOWN_IMAGE_RE.sub("", text)
+    return " ".join(text.split())

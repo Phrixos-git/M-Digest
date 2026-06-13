@@ -108,21 +108,43 @@ topics:
 
 ## systemd user timer
 
+Ubuntu 26.04 LTS の `systemd --user` timerで、毎朝7時に日報生成とメール送信を実行します。時刻はシステムのローカルタイムで解釈されます。
+
 ユニットをユーザーsystemd設定へコピーします。
 
 ```bash
 mkdir -p ~/.config/systemd/user
 cp systemd/user/info-agent-daily.service ~/.config/systemd/user/
 cp systemd/user/info-agent-daily.timer ~/.config/systemd/user/
+```
+
+`.env` を使わずuser timer専用にメール設定を置く場合は、次のように作成します。
+
+```bash
+mkdir -p ~/.config/info-agent
+cp .env.example ~/.config/info-agent/email.env
+$EDITOR ~/.config/info-agent/email.env
+chmod 600 ~/.config/info-agent/email.env
+```
+
+timerを有効化します。
+
+```bash
 systemctl --user daemon-reload
 systemctl --user enable --now info-agent-daily.timer
 ```
 
-状態確認:
+毎朝7時に予約されていることを確認します。
 
 ```bash
 systemctl --user status info-agent-daily.timer
 systemctl --user list-timers info-agent-daily.timer
+systemctl --user cat info-agent-daily.timer
+```
+
+ログと直近の実行結果を確認します。
+
+```bash
 journalctl --user -u info-agent-daily.service
 ```
 
@@ -132,7 +154,13 @@ journalctl --user -u info-agent-daily.service
 systemctl --user start info-agent-daily.service
 ```
 
-タイマー時刻を変える場合は `systemd/user/info-agent-daily.timer` の `OnCalendar` を編集して、再コピー後に `systemctl --user daemon-reload` を実行してください。
+ログアウト中もuser timerを動かしたい場合は、lingerを有効化します。
+
+```bash
+loginctl enable-linger "$USER"
+```
+
+タイマー時刻を変える場合は `systemd/user/info-agent-daily.timer` の `OnCalendar` を編集して、再コピー後に `systemctl --user daemon-reload` と `systemctl --user restart info-agent-daily.timer` を実行してください。
 
 ## ディレクトリ
 
