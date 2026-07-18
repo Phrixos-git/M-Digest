@@ -5,6 +5,7 @@ Arch Linux で動く、追加課金なしのRSS中心情報収集エージェン
 ## 機能
 
 - `config/sources.yaml` のRSS/Atomフィードを取得
+- 午前5時10分に気象庁から東京（地域コード `44132`）の5時発表予報を取得・保存
 - 各RSS/Atomフィードから最大5件の記事を取得
 - トピックごとのキーワードで取得記事を絞り込み。一致記事がない場合は最新5件を取得
 - URL正規化とタイトルハッシュで重複除外
@@ -12,6 +13,8 @@ Arch Linux で動く、追加課金なしのRSS中心情報収集エージェン
 - 取得済み記事は `outputs/state/seen.json` に保存
 - Gmail SMTPでMarkdown日報をメール送信
 - `systemd --user` timerで毎日自動実行
+
+天気予報は気象庁の東京地方の府県予報データを使用します。毎朝5時10分に前日以前のキャッシュを削除してから、5時発表分だけを `outputs/state/weather.json` へ保存し、午前7時の日報処理で読み込みます。11時・17時発表分や前日のキャッシュは日報へ混在させません。天気予報は日報の先頭に表示し、取得に失敗してもニュース日報の生成とメール送信は継続します。
 
 ## セットアップ
 
@@ -108,7 +111,7 @@ topics:
 
 ## systemd user timer
 
-Arch Linux の `systemd --user` timerで、毎朝7時に日報生成とメール送信を実行します。Arch Linux は systemd を標準で使用するため、別途インストールは不要です。時刻はシステムのローカルタイムで解釈されます。
+Arch Linux の `systemd --user` timerで、毎朝5時10分に5時発表の天気予報だけを保存します。その後、毎朝7時に保存済みの天気予報を読み込み、ニュース収集、日報生成、メール送信を実行します。Arch Linux は systemd を標準で使用するため、別途インストールは不要です。時刻はシステムのローカルタイムで解釈されます。
 
 ユニットは、このリポジトリが `~/Projects/M-Digest` に配置されている前提です。別の場所に配置した場合は、`systemd/user/info-agent-daily.service` の `WorkingDirectory` と `ExecStart` を実際の絶対パスに変更してください。
 
@@ -118,6 +121,8 @@ Arch Linux の `systemd --user` timerで、毎朝7時に日報生成とメール
 mkdir -p ~/.config/systemd/user
 cp systemd/user/info-agent-daily.service ~/.config/systemd/user/
 cp systemd/user/info-agent-daily.timer ~/.config/systemd/user/
+cp systemd/user/info-agent-weather.service ~/.config/systemd/user/
+cp systemd/user/info-agent-weather.timer ~/.config/systemd/user/
 ```
 
 `.env` を使わずuser timer専用にメール設定を置く場合は、次のように作成します。
@@ -133,27 +138,36 @@ timerを有効化します。
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user enable --now info-agent-daily.timer
+systemctl --user enable --now info-agent-weather.timer info-agent-daily.timer
 ```
 
-毎朝7時に予約されていることを確認します。
+天気取得が毎朝5時10分、日報処理が毎朝7時に予約されていることを確認します。
 
 ```bash
 systemctl --user status info-agent-daily.timer
-systemctl --user list-timers info-agent-daily.timer
+systemctl --user status info-agent-weather.timer
+systemctl --user list-timers info-agent-weather.timer info-agent-daily.timer
 systemctl --user cat info-agent-daily.timer
+systemctl --user cat info-agent-weather.timer
 ```
 
 ログと直近の実行結果を確認します。
 
 ```bash
 journalctl --user -u info-agent-daily.service
+journalctl --user -u info-agent-weather.service
 ```
 
 手動でsystemd経由実行:
 
 ```bash
 systemctl --user start info-agent-daily.service
+```
+
+天気予報だけを手動取得する場合:
+
+```bash
+systemctl --user start info-agent-weather.service
 ```
 
 ログアウト中もuser timerを動かしたい場合は、lingerを有効化します。
@@ -172,6 +186,6 @@ outputs/daily/YYYY-MM-DD.md      日報
 outputs/state/seen.json          重複除外用の状態
 scripts/setup_venv.sh            venv作成
 scripts/run_daily.sh             日次実行
-systemd/user/*.service|*.timer   user timer
+systemd/user/*.service|*.timer   天気取得・日報生成用user timer
 src/info_agent/                  Python実装
 ```

@@ -6,6 +6,7 @@ from .config import load_sources
 from .dedupe import SeenStore, entry_key
 from .report import render_markdown
 from .rss import Entry, fetch_entries
+from .weather_cache import load_weather_cache
 
 
 class DailyCollector:
@@ -17,6 +18,7 @@ class DailyCollector:
         report_date: str,
         limit_per_source: int,
         include_seen: bool = False,
+        weather_cache_path: Path = Path("outputs/state/weather.json"),
     ) -> None:
         self.config_path = config_path
         self.output_dir = output_dir
@@ -24,6 +26,7 @@ class DailyCollector:
         self.report_date = report_date
         self.limit_per_source = limit_per_source
         self.include_seen = include_seen
+        self.weather_cache_path = weather_cache_path
 
     def run(self) -> Path:
         sources = [source for source in load_sources(self.config_path) if source.enabled]
@@ -31,6 +34,12 @@ class DailyCollector:
         entries: list[Entry] = []
         report_keys: set[str] = set()
         errors: list[str] = []
+
+        weather = None
+        try:
+            weather = load_weather_cache(self.weather_cache_path, self.report_date)
+        except Exception as exc:  # noqa: BLE001 - report should survive weather failures.
+            errors.append(f"気象庁 天気予報: {exc}")
 
         if self.include_seen:
             for entry in _entries_from_existing_reports(self.output_dir):
@@ -54,7 +63,9 @@ class DailyCollector:
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         report_path = self.output_dir / f"{self.report_date}.md"
-        report_path.write_text(render_markdown(self.report_date, entries, errors), encoding="utf-8")
+        report_path.write_text(
+            render_markdown(self.report_date, entries, errors, weather), encoding="utf-8"
+        )
         seen.save()
         return report_path
 

@@ -4,20 +4,43 @@ from collections import defaultdict
 import re
 
 from .rss import Entry
+from .weather import WeatherForecast
 
 _HTML_IMAGE_RE = re.compile(r"<(?:img|picture|source)\b[^>]*>", re.IGNORECASE)
 _HTML_FIGURE_RE = re.compile(r"<figure\b[^>]*>.*?</figure>", re.IGNORECASE)
 _MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*]\([^)]*\)")
 
 
-def render_markdown(report_date: str, entries: list[Entry], errors: list[str]) -> str:
-    lines = [
-        f"# Daily Info Report - {report_date}",
-        "",
-        f"- New articles: {len(entries)}",
-        f"- Sources with errors: {len(errors)}",
-        "",
-    ]
+def render_markdown(
+    report_date: str,
+    entries: list[Entry],
+    errors: list[str],
+    weather: WeatherForecast | None = None,
+) -> str:
+    lines = [f"# Daily Info Report - {report_date}", ""]
+
+    if weather is not None:
+        published = weather.published_at.replace("T", " ")[:16]
+        lines.extend([f"## 天気予報（{weather.area_name}）", "", f"- 発表: {published}"])
+        for day in weather.days:
+            details: list[str] = []
+            if day.precipitation:
+                details.append(f"降水確率 {' / '.join(day.precipitation)}%")
+            if day.temperatures:
+                details.append(f"気温 {' / '.join(day.temperatures)}℃")
+            suffix = f"（{'、'.join(details)}）" if details else ""
+            lines.append(f"- {day.date}: {day.weather}{suffix}")
+        lines.append("")
+    else:
+        lines.extend(["## 天気予報", "", "- 天気予報を取得できませんでした。", ""])
+
+    lines.extend(
+        [
+            f"- New articles: {len(entries)}",
+            f"- Fetch errors: {len(errors)}",
+            "",
+        ]
+    )
 
     grouped: dict[str, list[Entry]] = defaultdict(list)
     for entry in entries:
