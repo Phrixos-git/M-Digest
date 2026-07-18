@@ -1,6 +1,6 @@
 # Info Agent
 
-Ubuntu 26.04 LTS aarch64 で動く、追加課金なしのRSS中心情報収集エージェントです。OpenAI APIキー、有料検索API、外部SaaSは使いません。
+Arch Linux で動く、追加課金なしのRSS中心情報収集エージェントです。OpenAI APIキー、有料検索API、外部SaaSは使いません。
 
 ## 機能
 
@@ -16,12 +16,12 @@ Ubuntu 26.04 LTS aarch64 で動く、追加課金なしのRSS中心情報収集�
 ## セットアップ
 
 ```bash
-sudo apt update
-sudo apt install -y python3 python3-venv
+sudo pacman -Syu
+sudo pacman -S --needed python
 ./scripts/setup_venv.sh
 ```
 
-外部Pythonパッケージは使っていないため、PyPIへの接続は不要です。
+Arch Linux の `python` パッケージには `venv` が含まれるため、Ubuntu/Debian系の `python3-venv` に相当する個別パッケージは不要です。外部Pythonパッケージも使っていないため、PyPIへの接続は不要です。
 
 ## 手動実行
 
@@ -108,7 +108,9 @@ topics:
 
 ## systemd user timer
 
-Ubuntu 26.04 LTS の `systemd --user` timerで、毎朝7時に日報生成とメール送信を実行します。時刻はシステムのローカルタイムで解釈されます。
+Arch Linux の `systemd --user` timerで、毎朝7時に日報生成とメール送信を実行します。Arch Linux は systemd を標準で使用するため、別途インストールは不要です。時刻はシステムのローカルタイムで解釈されます。
+
+ユニットは、このリポジトリが `~/Projects/M-Digest` に配置されている前提です。別の場所に配置した場合は、`systemd/user/info-agent-daily.service` の `WorkingDirectory` と `ExecStart` を実際の絶対パスに変更してください。
 
 ユニットをユーザーsystemd設定へコピーします。
 
