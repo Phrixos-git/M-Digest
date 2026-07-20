@@ -13,6 +13,11 @@ def main() -> int:
     parser.add_argument("--config", default="config/sources.yaml", help="Path to sources.yaml")
     parser.add_argument("--output-dir", default="outputs/daily", help="Directory for daily Markdown reports")
     parser.add_argument("--state", default="outputs/state/seen.json", help="Path to dedupe state JSON")
+    parser.add_argument(
+        "--weather-cache",
+        default="outputs/state/weather.json",
+        help="Path to the cached 05:00 JMA forecast JSON",
+    )
     parser.add_argument("--date", default=date.today().isoformat(), help="Report date in YYYY-MM-DD")
     parser.add_argument("--limit-per-source", type=int, default=5, help="Maximum entries per source")
     parser.add_argument("--include-seen", action="store_true", help="Include previously seen entries in the report")
@@ -25,6 +30,7 @@ def main() -> int:
         report_date=args.date,
         limit_per_source=args.limit_per_source,
         include_seen=args.include_seen,
+        weather_cache_path=Path(args.weather_cache),
     )
     report_path = collector.run()
     send_report_email(report_path, args.date, load_email_config_from_env())
