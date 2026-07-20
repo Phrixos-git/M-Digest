@@ -1,0 +1,9 @@
+[Unit]
+Description=Fetch the 05:00 JMA weather forecast
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Projects/M-Digest
+ExecStart=%h/Projects/M-Digest/scripts/run_weather.sh

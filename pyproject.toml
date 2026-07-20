@@ -14,6 +14,7 @@ where = ["src"]
 
 [project.scripts]
 info-agent-daily = "info_agent.cli:main"
+info-agent-weather = "info_agent.weather_cache:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

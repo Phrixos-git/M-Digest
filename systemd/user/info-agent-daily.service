@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=%h/projects/info-agent
+WorkingDirectory=%h/Projects/M-Digest
 EnvironmentFile=-%h/.config/info-agent/email.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=%h/projects/info-agent/scripts/run_daily.sh
+ExecStart=%h/Projects/M-Digest/scripts/run_daily.sh

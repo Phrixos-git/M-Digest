@@ -1,0 +1,11 @@
+[Unit]
+Description=Fetch the JMA weather forecast every morning at 05:10
+
+[Timer]
+OnCalendar=*-*-* 05:10:00
+AccuracySec=1min
+Persistent=true
+Unit=info-agent-weather.service
+
+[Install]
+WantedBy=timers.target
