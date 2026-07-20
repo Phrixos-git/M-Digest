@@ -6,4 +6,4 @@ After=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=%h/Projects/M-Digest
-ExecStart=%h/Projects/M-Digest/.venv/bin/python -m info_agent.weather_cache
+ExecStart=%h/Projects/M-Digest/scripts/run_weather.sh

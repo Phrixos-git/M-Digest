@@ -186,6 +186,7 @@ outputs/daily/YYYY-MM-DD.md      日報
 outputs/state/seen.json          重複除外用の状態
 scripts/setup_venv.sh            venv作成
 scripts/run_daily.sh             日次実行
+scripts/run_weather.sh           天気予報取得
 systemd/user/*.service|*.timer   天気取得・日報生成用user timer
 src/info_agent/                  Python実装
 ```
