@@ -36,6 +36,16 @@ class SeenStore:
     def entries(self) -> list[Entry]:
         return [self.entries_by_key[key] for key in sorted(self.entries_by_key)]
 
+    def missing_entry_keys(self) -> set[str]:
+        return self.keys - self.entries_by_key.keys()
+
+    def backfill(self, entry: Entry) -> bool:
+        key = entry_key(entry)
+        if key not in self.keys or key in self.entries_by_key:
+            return False
+        self.entries_by_key[key] = entry
+        return True
+
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {

@@ -113,9 +113,7 @@ def _atom_link(item: ElementTree.Element, ns: dict[str, str]) -> str:
 
 
 def _clean(value: str) -> str:
-    text = unescape(value or "")
-    text = " ".join(text.replace("\n", " ").replace("\r", " ").split())
-    return text
+    return " ".join(unescape(value or "").split())
 
 
 def _format_date(value: str) -> str:
