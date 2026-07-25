@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .config import load_sources
 from .dedupe import SeenStore, entry_key
-from .report import render_markdown
+from .report import CATEGORY_HEADING_PREFIX, SOURCE_HEADING_PREFIX, render_markdown
 from .rss import Entry, fetch_entries
 from .weather_cache import load_weather_cache
 
@@ -42,8 +42,10 @@ class DailyCollector:
             errors.append(f"気象庁 天気予報: {exc}")
 
         if self.include_seen:
-            for entry in _entries_from_existing_reports(self.output_dir):
-                seen.add(entry)
+            missing_keys = seen.missing_entry_keys()
+            if missing_keys:
+                for entry in _entries_from_existing_reports(self.output_dir, missing_keys):
+                    seen.backfill(entry)
             enabled_sources = {(source.name, source.category) for source in sources}
             for entry in seen.entries():
                 if _is_enabled_entry(entry, enabled_sources):
@@ -101,8 +103,10 @@ def _is_enabled_entry(entry: Entry, enabled_sources: set[tuple[str, str]]) -> bo
     return entry.category == "general" and any(entry.source == source for source, _ in enabled_sources)
 
 
-def _entries_from_existing_reports(output_dir: Path) -> list[Entry]:
-    if not output_dir.exists():
+def _entries_from_existing_reports(
+    output_dir: Path, wanted_keys: set[str] | None = None
+) -> list[Entry]:
+    if not output_dir.exists() or wanted_keys == set():
         return []
 
     entries: list[Entry] = []
@@ -117,16 +121,22 @@ def _entries_from_existing_reports(output_dir: Path) -> list[Entry]:
                 category = "general"
                 pending = None
                 continue
-            if line.startswith("## "):
-                category = line[3:].strip() or "general"
+            if line.startswith(CATEGORY_HEADING_PREFIX):
+                category = line[len(CATEGORY_HEADING_PREFIX) :].strip() or "general"
                 source = ""
+                pending = None
+                continue
+            if line.startswith(SOURCE_HEADING_PREFIX):
+                source = line[len(SOURCE_HEADING_PREFIX) :].strip()
                 pending = None
                 continue
             if line.startswith("- ["):
                 parsed = _entry_from_report_line(line, category, source)
-                if parsed is not None:
+                if parsed is not None and (wanted_keys is None or entry_key(parsed) in wanted_keys):
                     entries.append(parsed)
                     pending = parsed
+                    if wanted_keys is not None:
+                        wanted_keys.discard(entry_key(parsed))
                 continue
             if pending is not None and line.startswith("  - "):
                 entries[-1] = Entry(
@@ -138,6 +148,8 @@ def _entries_from_existing_reports(output_dir: Path) -> list[Entry]:
                     summary=line[4:].strip(),
                 )
                 pending = entries[-1]
+        if wanted_keys == set():
+            break
     return entries
 
 

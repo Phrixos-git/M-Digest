@@ -10,6 +10,7 @@ Arch Linux で動く、追加課金なしのRSS中心情報収集エージェン
 - トピックごとのキーワードで取得記事を絞り込み。一致記事がない場合は最新5件を取得
 - URL正規化とタイトルハッシュで重複除外
 - `outputs/daily/YYYY-MM-DD.md` にMarkdown日報を出力
+- 日報の記事を `## カテゴリ` → `### ソース` の順で分類
 - 取得済み記事は `outputs/state/seen.json` に保存
 - Gmail SMTPでMarkdown日報をメール送信
 - `systemd --user` timerで毎日自動実行

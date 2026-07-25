@@ -10,6 +10,7 @@ topics:
       - Qwen
       - RAG
       - MCP
+      - llama.cpp
 
   - name: dev_environment
     label: 開発環境
@@ -49,7 +50,7 @@ topics:
     keywords:
       - NVIDIA
       - RTX
-      - Linux ARM64
-      - Ubuntu
+      - Linux
+      - Arch Linux
       - intel ARC
       - Ryzen
