@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from email.message import EmailMessage
 from pathlib import Path
 
+from .utils import parse_bool
+
 
 @dataclass(frozen=True)
 class EmailConfig:
@@ -26,7 +28,7 @@ def load_email_config_from_env() -> EmailConfig:
     recipients = _split_recipients(os.environ.get("INFO_AGENT_EMAIL_TO", ""))
     username = os.environ.get("INFO_AGENT_SMTP_USERNAME", "").strip()
     password = os.environ.get("INFO_AGENT_SMTP_PASSWORD", "")
-    use_ssl = _as_bool(os.environ.get("INFO_AGENT_SMTP_SSL", "false"))
+    use_ssl = parse_bool(os.environ.get("INFO_AGENT_SMTP_SSL", "false"))
 
     if not sender and username:
         sender = username
@@ -52,7 +54,7 @@ def load_email_config_from_env() -> EmailConfig:
         subject=os.environ.get("INFO_AGENT_EMAIL_SUBJECT", "").strip(),
         username=username,
         password=password,
-        use_starttls=_as_bool(os.environ.get("INFO_AGENT_SMTP_STARTTLS", "true")),
+        use_starttls=parse_bool(os.environ.get("INFO_AGENT_SMTP_STARTTLS", "true")),
         use_ssl=use_ssl,
     )
 
@@ -91,10 +93,6 @@ def _smtp_port(use_ssl: bool) -> int:
 
 def _split_recipients(value: str) -> tuple[str, ...]:
     return tuple(part.strip() for part in value.split(",") if part.strip())
-
-
-def _as_bool(value: str) -> bool:
-    return value.strip().casefold() not in {"false", "no", "0", "off"}
 
 
 def _is_gmail_smtp(host: str) -> bool:

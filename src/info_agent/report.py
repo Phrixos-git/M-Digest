@@ -9,6 +9,8 @@ from .weather import WeatherForecast
 _HTML_IMAGE_RE = re.compile(r"<(?:img|picture|source)\b[^>]*>", re.IGNORECASE)
 _HTML_FIGURE_RE = re.compile(r"<figure\b[^>]*>.*?</figure>", re.IGNORECASE)
 _MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*]\([^)]*\)")
+CATEGORY_HEADING_PREFIX = "## "
+SOURCE_HEADING_PREFIX = "### "
 
 
 def render_markdown(
@@ -42,22 +44,24 @@ def render_markdown(
         ]
     )
 
-    grouped: dict[str, list[Entry]] = defaultdict(list)
+    grouped: dict[str, dict[str, list[Entry]]] = defaultdict(lambda: defaultdict(list))
     for entry in entries:
-        grouped[entry.source].append(entry)
+        grouped[entry.category][entry.source].append(entry)
 
     if not entries:
         lines.extend(["No new articles found.", ""])
     else:
-        for source in sorted(grouped):
-            lines.extend([source, "=" * max(len(source), 1), ""])
-            for entry in grouped[source]:
-                published = f" ({entry.published})" if entry.published else ""
-                lines.append(f"- [{_strip_images(entry.title)}]({entry.url}){published}")
-                summary = _strip_images(entry.summary)
-                if summary:
-                    lines.append(f"  - {summary[:240]}")
-            lines.append("")
+        for category in sorted(grouped):
+            lines.extend([f"{CATEGORY_HEADING_PREFIX}{category}", ""])
+            for source in sorted(grouped[category]):
+                lines.extend([f"{SOURCE_HEADING_PREFIX}{source}", ""])
+                for entry in grouped[category][source]:
+                    published = f" ({entry.published})" if entry.published else ""
+                    lines.append(f"- [{_strip_images(entry.title)}]({entry.url}){published}")
+                    summary = _strip_images(entry.summary)
+                    if summary:
+                        lines.append(f"  - {summary[:240]}")
+                lines.append("")
 
     if errors:
         lines.extend(["## Fetch Errors", ""])

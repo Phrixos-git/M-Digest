@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .utils import parse_bool
+
 
 @dataclass(frozen=True)
 class Source:
@@ -17,31 +19,9 @@ class Source:
 def load_sources(path: Path) -> list[Source]:
     data = _parse_minimal_yaml(path.read_text(encoding="utf-8"))
     raw_topics = data.get("topics")
-    if isinstance(raw_topics, list):
-        return _load_topic_sources(raw_topics)
-
-    raw_sources = data.get("sources")
-    if not isinstance(raw_sources, list):
-        raise ValueError(f"{path} must contain a top-level 'topics' or 'sources' list")
-
-    sources: list[Source] = []
-    for index, item in enumerate(raw_sources, start=1):
-        if not isinstance(item, dict):
-            raise ValueError(f"source #{index} must be a mapping")
-        name = str(item.get("name", "")).strip()
-        url = str(item.get("url", "")).strip()
-        if not name or not url:
-            raise ValueError(f"source #{index} must include name and url")
-        sources.append(
-            Source(
-                name=name,
-                url=url,
-                category=str(item.get("category", "general")).strip() or "general",
-                enabled=_as_bool(item.get("enabled", True)),
-                keywords=tuple(_as_str_list(item.get("keywords", []))),
-            )
-        )
-    return sources
+    if not isinstance(raw_topics, list):
+        raise ValueError(f"{path} must contain a top-level 'topics' list")
+    return _load_topic_sources(raw_topics)
 
 
 def _load_topic_sources(raw_topics: list[Any]) -> list[Source]:
@@ -53,7 +33,7 @@ def _load_topic_sources(raw_topics: list[Any]) -> list[Source]:
         topic_name = str(topic.get("name", f"topic_{topic_index}")).strip()
         label = str(topic.get("label", topic_name)).strip() or topic_name
         keywords = tuple(_as_str_list(topic.get("keywords", [])))
-        topic_enabled = _as_bool(topic.get("enabled", True))
+        topic_enabled = parse_bool(topic.get("enabled", True))
         raw_feeds = topic.get("feeds", [])
 
         if not isinstance(raw_feeds, list):
@@ -62,20 +42,37 @@ def _load_topic_sources(raw_topics: list[Any]) -> list[Source]:
         for feed_index, feed in enumerate(raw_feeds, start=1):
             if not isinstance(feed, dict):
                 raise ValueError(f"topic #{topic_index} feed #{feed_index} must be a mapping")
-            name = str(feed.get("name", "")).strip()
-            url = str(feed.get("url", "")).strip()
-            if not name or not url:
-                raise ValueError(f"topic #{topic_index} feed #{feed_index} must include name and url")
             sources.append(
-                Source(
-                    name=name,
-                    url=url,
+                _source_from_mapping(
+                    feed,
+                    context=f"topic #{topic_index} feed #{feed_index}",
                     category=label,
-                    enabled=topic_enabled and _as_bool(feed.get("enabled", True)),
+                    enabled=topic_enabled,
                     keywords=keywords,
                 )
             )
     return sources
+
+
+def _source_from_mapping(
+    item: dict[str, Any],
+    *,
+    context: str,
+    category: str,
+    enabled: bool,
+    keywords: tuple[str, ...],
+) -> Source:
+    name = str(item.get("name", "")).strip()
+    url = str(item.get("url", "")).strip()
+    if not name or not url:
+        raise ValueError(f"{context} must include name and url")
+    return Source(
+        name=name,
+        url=url,
+        category=category,
+        enabled=enabled and parse_bool(item.get("enabled", True)),
+        keywords=keywords,
+    )
 
 
 def _as_str_list(value: Any) -> list[str]:
@@ -86,22 +83,10 @@ def _as_str_list(value: Any) -> list[str]:
     return [str(item).strip() for item in value if str(item).strip()]
 
 
-def _as_bool(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.lower() not in {"false", "no", "0", "off"}
-    return bool(value)
-
-
 def _parse_minimal_yaml(text: str) -> dict[str, Any]:
     """Parse the small YAML subset used by config/sources.yaml.
 
     Supported shape:
-      sources:
-        - name: value
-          url: value
-          enabled: true
       topics:
         - name: value
           feeds:

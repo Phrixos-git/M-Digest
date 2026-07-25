@@ -20,13 +20,11 @@ def save_weather_cache(path: Path, forecast: WeatherForecast) -> None:
 
 def load_weather_cache(path: Path, report_date: str) -> WeatherForecast:
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        forecast = _read_weather_cache(path)
     except FileNotFoundError as exc:
         raise ValueError(f"天気キャッシュがありません: {path}") from exc
     except json.JSONDecodeError as exc:
         raise ValueError(f"天気キャッシュが不正です: {path}") from exc
-
-    forecast = _forecast_from_dict(payload)
     published_date = forecast.published_at[:10]
     if published_date != report_date:
         raise ValueError(
@@ -39,8 +37,7 @@ def remove_stale_weather_cache(path: Path, current_date: str) -> bool:
     if not path.exists():
         return False
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        forecast = _forecast_from_dict(payload)
+        forecast = _read_weather_cache(path)
     except (json.JSONDecodeError, ValueError):
         path.unlink()
         return True
@@ -49,6 +46,11 @@ def remove_stale_weather_cache(path: Path, current_date: str) -> bool:
         return False
     path.unlink()
     return True
+
+
+def _read_weather_cache(path: Path) -> WeatherForecast:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return _forecast_from_dict(payload)
 
 
 def _forecast_from_dict(payload: Any) -> WeatherForecast:
